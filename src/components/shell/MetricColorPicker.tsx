@@ -19,6 +19,8 @@ import {
   type MetricColorKey,
 } from "@/hooks/useMetricColors";
 import { useCanSyncSiteTheme } from "@/hooks/useSiteThemeOptions";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
+import { METRIC_STYLE_OPTIONS } from "@/utils/metricStyle";
 
 const DARK_DEPTH_PRESETS = [
   { value: 0, label: "灰黑", title: "当前默认色" },
@@ -54,6 +56,7 @@ export function MetricColorPicker({ hidden = false }: { hidden?: boolean }) {
     saveError,
   } = useMetricColorsEditor({ syncsToSite });
   const { resolvedAppearance } = usePreferences();
+  const { style: metricStyle, setStyle: setMetricStyle } = useMetricStyle();
 
   // 默认色（无覆盖时生效的 token）。只在明暗模式切换/重置时重读 ——
   // 不能放进拖动热路径：getComputedStyle 会强制同步重排，每帧多次=掉帧。
@@ -91,6 +94,23 @@ export function MetricColorPicker({ hidden = false }: { hidden?: boolean }) {
         </div>
       </div>
       {saveError && <div className="metric-color-error">保存失败（请确认已登录管理员）</div>}
+      <div className="metric-color-group">
+        <div className="metric-color-group-title">指标样式</div>
+        <div className="metric-style-presets" role="group" aria-label="指标样式">
+          {METRIC_STYLE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className="metric-style-preset"
+              data-active={metricStyle === option.value ? "true" : "false"}
+              aria-pressed={metricStyle === option.value}
+              onClick={() => setMetricStyle(option.value)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="metric-color-group">
         <div className="metric-color-group-title">暗色背景</div>
         <div className="dark-depth-control">

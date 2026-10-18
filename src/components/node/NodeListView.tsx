@@ -7,6 +7,7 @@ import { OsLogo } from "@/components/ui/OsLogo";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useMetricColorsVersion } from "@/hooks/useMetricColors";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
 import { formatBytes } from "@/utils/format";
 import { speedRateColor } from "@/utils/metricTone";
 import { CanvasStrip, fillRoundedRect, safeCanvasColor } from "./CanvasStrip";
@@ -16,6 +17,7 @@ import { formatOsLabel, joinTagTitle, nodeDetailLinkLabels } from "./nodeCardSha
 import { formatHealthBucketTooltip } from "./pingBucketText";
 import type { PingOverviewTaskLoadState } from "@/types/cfsm";
 import { HOMEPAGE_PING_BUCKET_COUNT } from "@/hooks/usePingOverview";
+import { NodeCard } from "./NodeCard";
 
 const GAUGE_SEGMENTS = 14;
 
@@ -110,6 +112,7 @@ function ListGauge({
   redrawKey: string;
   unit?: string;
 }) {
+  const { style } = useMetricStyle();
   const activeSegments = clamp01(fraction) * GAUGE_SEGMENTS;
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -139,7 +142,13 @@ function ListGauge({
         {value}
         {unit && <small>{unit}</small>}
       </span>
-      <CanvasStrip className="node-list-gauge-track" height={8} redrawKey={redrawKey} draw={draw} />
+      {style === "dashed" ? (
+        <CanvasStrip className="node-list-gauge-track" height={8} redrawKey={redrawKey} draw={draw} />
+      ) : (
+        <span className="node-list-gauge-track is-solid" aria-hidden>
+          <span style={{ width: `${clamp01(fraction) * 100}%`, background: paint }} />
+        </span>
+      )}
     </div>
   );
 }
@@ -224,7 +233,13 @@ function ListLatency({
   );
 }
 
-const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
+const NodeRow = memo(function NodeRow({
+  uuid,
+  onActivate,
+}: {
+  uuid: string;
+  onActivate?: () => void;
+}) {
   const { resolvedAppearance } = usePreferences();
   const colorsVersion = useMetricColorsVersion();
   const redrawKey = `${resolvedAppearance}:${colorsVersion}`;
@@ -276,16 +291,12 @@ const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
     node.online === true ? "在线" : node.online === false ? "离线" : "状态未知",
     `运行 ${uptime.value}${uptime.unit}`,
     `到期 ${expire.value}${expire.unit}`,
-    "查看详情",
+    onActivate ? "展开卡片" : "查看详情",
   ].join("，");
 
-  return (
-    <Link
-      to={`/server/${encodeURIComponent(uuid)}`}
-      className={clsx("node-list-row", isOffline && "is-offline")}
-      title={detailLabels.title}
-      aria-label={rowLabel}
-    >
+  const rowClassName = clsx("node-list-row", isOffline && "is-offline");
+  const rowBody = (
+    <>
       <div className="node-list-cell node-list-node">
         <div className="node-list-node-text">
           <div className="node-list-node-head">
@@ -388,11 +399,46 @@ const NodeRow = memo(function NodeRow({ uuid }: { uuid: string }) {
         <StackLine value={uptime.value} unit={uptime.unit} color="var(--progress-cpu)" />
         <StackLine value={expire.value} unit={expire.unit} color={expireColor} />
       </div>
+    </>
+  );
+
+  if (onActivate) {
+    return (
+      <button
+        type="button"
+        className={rowClassName}
+        title="展开卡片"
+        aria-label={rowLabel}
+        onClick={onActivate}
+      >
+        {rowBody}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      to={`/server/${encodeURIComponent(uuid)}`}
+      className={rowClassName}
+      title={detailLabels.title}
+      aria-label={rowLabel}
+    >
+      {rowBody}
     </Link>
   );
 });
 
-export function NodeListView({ uuids }: { uuids: string[] }) {
+export function NodeListView({
+  uuids,
+  expandedUuid = null,
+  onExpand,
+  onCollapse,
+}: {
+  uuids: string[];
+  expandedUuid?: string | null;
+  onExpand?: (uuid: string) => void;
+  onCollapse?: () => void;
+}) {
   return (
     <div className="node-list-scroll">
       <div className="node-list">
@@ -408,9 +454,19 @@ export function NodeListView({ uuids }: { uuids: string[] }) {
           <div className="node-list-cell col-net">网络</div>
           <div className="node-list-cell col-life">在线 / 到期</div>
         </div>
-        {uuids.map((uuid) => (
-          <NodeRow key={uuid} uuid={uuid} />
-        ))}
+        {uuids.map((uuid) =>
+          expandedUuid === uuid ? (
+            <div key={uuid} className="node-list-expanded">
+              <NodeCard uuid={uuid} onCollapse={onCollapse} />
+            </div>
+          ) : (
+            <NodeRow
+              key={uuid}
+              uuid={uuid}
+              onActivate={onExpand ? () => onExpand(uuid) : undefined}
+            />
+          ),
+        )}
       </div>
     </div>
   );

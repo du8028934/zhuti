@@ -173,6 +173,20 @@
   padding-top: 10px;
 }
 
+.compact-node-vitals[data-metric-style="ring"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.compact-node-gauge.is-ring {
+  align-items: center;
+}
+
+[data-metric-style="bar"] .compact-node-gauge-track {
+  border-radius: 999px;
+  -webkit-mask: none;
+  mask: none;
+}
+
 .compact-node-gauge {
   min-width: 0;
   display: flex;
@@ -733,6 +747,11 @@
     padding: 12px;
   }
 
+  .compact-node-vitals[data-metric-style="ring"],
+  .mini-node-vitals[data-metric-style="ring"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .compact-node-vitals {
     gap: 9px;
   }
@@ -761,5 +780,76 @@
 
   .compact-node-bottom {
     gap: 7px;
+  }
+}
+
+.compact-node-card.is-banner {
+  contain-intrinsic-size: auto 52px;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  min-height: 48px;
+  padding: 8px 12px;
+}
+
+.compact-node-banner {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.compact-node-banner-name {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.compact-node-banner-status {
+  flex: 0 0 auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--status-online) 16%, transparent);
+  color: var(--status-online);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.compact-node-banner-status.is-offline {
+  background: color-mix(in srgb, var(--status-offline) 16%, transparent);
+  color: var(--status-offline);
+}
+
+.compact-node-banner-metrics {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  .compact-node-banner-optional {
+    display: none;
   }
 }

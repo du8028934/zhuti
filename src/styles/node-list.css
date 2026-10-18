@@ -38,9 +38,26 @@
   border-radius: 0;
   background: transparent;
   color: var(--text-primary);
+  text-align: inherit;
+  font: inherit;
+  cursor: pointer;
   transition:
     border-color 160ms ease,
     background 160ms ease;
+}
+
+button.node-list-row {
+  width: 100%;
+}
+
+.node-list-expanded {
+  min-width: 0;
+  padding: 10px 12px 12px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.node-list-expanded:last-child {
+  border-bottom: 0;
 }
 
 .node-list-row:not(.node-list-head):hover {
@@ -208,6 +225,19 @@
   width: 100%;
   max-width: 120px;
   height: 8px;
+}
+
+.node-list-gauge-track.is-solid {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--progress-bg);
+}
+
+.node-list-gauge-track.is-solid > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
 }
 
 /* ── 堆叠格(实时/流量/网络/在线到期):每行一个值 ── */

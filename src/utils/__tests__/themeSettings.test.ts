@@ -17,6 +17,12 @@ describe("normalizeThemeSettings", () => {
     expect(normalizeThemeSettings({ mobileNodeViewMode: "list" }).mobileNodeViewMode).toBe(
       "compact",
     );
+    expect(normalizeThemeSettings({ mobileNodeViewMode: "banner" }).mobileNodeViewMode).toBe(
+      "banner",
+    );
+    expect(normalizeThemeSettings({ desktopNodeViewMode: "banner" }).desktopNodeViewMode).toBe(
+      "large",
+    );
   });
 
   it("defaults overview ratings on unless explicitly disabled", () => {

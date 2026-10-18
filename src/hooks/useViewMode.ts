@@ -9,8 +9,8 @@ const MOBILE_OVERRIDE_KEY = "cfsm-luminaplus:node-view-mode-session:mobile";
 export const MOBILE_VIEW_MODE_QUERY = "(max-width: 720px)";
 // 快捷切换按钮的循环顺序：大卡 → 小卡 → 迷你 → 列表 → 大卡……
 const VIEW_MODE_CYCLE: readonly NodeViewMode[] = ["large", "compact", "mini", "list"];
-// 列表档天生不适合窄屏,仅桌面可用:移动端从循环里剔除,且默认值解析成 list 时兜底回 compact。
-const MOBILE_VIEW_MODES: readonly NodeViewMode[] = ["large", "compact", "mini"];
+// 列表档仅桌面；折叠横幅档仅移动端，方便窄屏把小卡收成一条。
+const MOBILE_VIEW_MODES: readonly NodeViewMode[] = ["large", "compact", "mini", "banner"];
 
 export type ViewModeDevice = "desktop" | "mobile";
 
@@ -18,7 +18,9 @@ export function normalizeViewModeForDevice(
   mode: NodeViewMode,
   device: ViewModeDevice,
 ): NodeViewMode {
-  return device === "mobile" && mode === "list" ? "compact" : mode;
+  if (device === "mobile" && mode === "list") return "compact";
+  if (device === "desktop" && mode === "banner") return "compact";
+  return mode;
 }
 
 export function getNextViewMode(mode: NodeViewMode, device: ViewModeDevice): NodeViewMode {

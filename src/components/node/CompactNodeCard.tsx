@@ -21,6 +21,8 @@ import { OsLogo } from "@/components/ui/OsLogo";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { HOMEPAGE_PING_BUCKET_COUNT } from "@/hooks/usePingOverview";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
+import { MetricRing } from "./MetricRing";
 import { formatBytes } from "@/utils/format";
 import { speedRateColor, speedRateColorFromBytes } from "@/utils/metricTone";
 import { supportsFineHover } from "@/utils/mediaQuery";
@@ -75,19 +77,39 @@ function CompactGauge({
   color: string;
   fraction: number;
 }) {
-  // 单元素分段条:填充用一个 hard-stop 渐变到 fraction 处,再叠一个重复 mask 打出
-  // 18 个段间空隙。替代了 18 个逐段 <span>(每卡 ×4 个 gauge)—— 那些 span 在每个
-  // 屏外卡片上每 tick 的 reconcile + 样式重算曾是渲染开销大头。
-  const style = {
+  const { style } = useMetricStyle();
+  const clamped = clamp01(fraction);
+  const css = {
     "--compact-gauge-color": color,
-    "--compact-gauge-fill": `${clamp01(fraction) * 100}%`,
+    "--compact-gauge-fill": `${clamped * 100}%`,
   } as CSSProperties;
   const tip = useMetricDetailTip();
+
+  if (style === "ring") {
+    return (
+      <div
+        className="compact-node-gauge is-ring"
+        style={css}
+        data-tip-open={detail && tip.open ? "true" : undefined}
+        {...(detail ? tip.handlers : undefined)}
+      >
+        {detail && tip.open && <MetricDetailTip text={detail} />}
+        <MetricRing fraction={clamped} color={color} size={56} stroke={5.5} />
+        <div className="compact-node-gauge-head">
+          <span className="compact-node-gauge-label">
+            {icon}
+            <span>{label}</span>
+          </span>
+          <strong className="tabular">{value}</strong>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className="compact-node-gauge"
-      style={style}
+      style={css}
       data-tip-open={detail && tip.open ? "true" : undefined}
       {...(detail ? tip.handlers : undefined)}
     >
@@ -432,8 +454,9 @@ function CompactNodeVitals({
   node: CompactNode;
   loadFraction: number;
 }) {
+  const { style } = useMetricStyle();
   return (
-    <div className="compact-node-vitals">
+    <div className="compact-node-vitals" data-metric-style={style}>
       <CompactGauge
         icon={<Cpu size={12} />}
         label="CPU"
@@ -695,16 +718,62 @@ const CompactNodeHealth = memo(function CompactNodeHealth({
   );
 });
 
+function CompactNodeBanner({
+  node,
+  isOffline,
+  upRate,
+  pingMs,
+  onExpand,
+}: {
+  node: CompactNode;
+  isOffline: boolean;
+  upRate: ByteRateDisplay;
+  pingMs: number | null;
+  onExpand?: () => void;
+}) {
+  const statusLabel = isOffline ? "离线" : "在线";
+  const pingLabel = pingMs == null ? "—" : `${Math.round(pingMs)}ms`;
+  const expandLabel = `${node.name}，${statusLabel}，点击展开卡片`;
+
+  return (
+    <article className={clsx("compact-node-card is-banner", isOffline && "is-offline")}>
+      <button
+        type="button"
+        className="compact-node-banner"
+        title="展开卡片"
+        aria-label={expandLabel}
+        onClick={onExpand}
+      >
+        <Flag region={node.region} size={14} />
+        <span className="compact-node-banner-name">{node.name}</span>
+        <span className={clsx("compact-node-banner-status", isOffline && "is-offline")}>{statusLabel}</span>
+        <span className="compact-node-banner-metrics">
+          <span>CPU {formatCompactPercent(node.cpuPct)}</span>
+          <span>内存 {formatCompactPercent(node.ramPct)}</span>
+          <span className="compact-node-banner-optional">磁盘 {formatCompactPercent(node.diskPct)}</span>
+          <span className="compact-node-banner-optional">↑ {upRate.value}{upRate.unit}</span>
+          <span className="compact-node-banner-optional">{pingLabel}</span>
+        </span>
+      </button>
+    </article>
+  );
+}
+
 export const CompactNodeCard = memo(function CompactNodeCard({
   uuid,
+  layout = "card",
+  onExpand,
 }: {
   uuid: string;
+  layout?: "card" | "banner";
+  onExpand?: () => void;
 }) {
   const model = useNodeCardModel(uuid, {
     pingBucketCount: HOMEPAGE_PING_BUCKET_COUNT,
     includeMultiPing: true,
   });
   const themeSettings = useThemeSettings();
+  const { style: metricStyle } = useMetricStyle();
 
   if (!model.node) {
     return <div className="compact-node-card animate-pulse" aria-busy />;
@@ -740,8 +809,20 @@ export const CompactNodeCard = memo(function CompactNodeCard({
   // 开关关闭或节点离线时,完全跳过格式化工作。
   const uptimeLabel = showUptime && !isOffline ? formatCompactUptime(node.uptime) : "";
 
+  if (layout === "banner") {
+    return (
+      <CompactNodeBanner
+        node={node}
+        isOffline={isOffline}
+        upRate={upRate}
+        pingMs={ping.lastValue}
+        onExpand={onExpand}
+      />
+    );
+  }
+
   return (
-    <article className={clsx("compact-node-card", isOffline && "is-offline")}>
+    <article className={clsx("compact-node-card", isOffline && "is-offline")} data-metric-style={metricStyle}>
       <CompactNodeHeader
         node={node}
         osName={osName}

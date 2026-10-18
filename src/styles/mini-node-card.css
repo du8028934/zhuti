@@ -137,6 +137,10 @@
   border-top: 1px solid var(--hairline);
 }
 
+.mini-node-vitals[data-metric-style="ring"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
 .mini-node-vitals .metric-item {
   gap: 5px;
 }
@@ -207,6 +211,16 @@
     var(--mini-metric-color) 0 6px,
     transparent 6px 8px
   );
+}
+
+.mini-metric-track.is-solid {
+  background: var(--progress-bg);
+  border-radius: 999px;
+}
+
+.mini-metric-track.is-solid::after {
+  background: var(--mini-metric-color);
+  border-radius: inherit;
 }
 
 /* Mini 遥测带：左侧实时上下行，右侧累计上下行。 */

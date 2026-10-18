@@ -56,6 +56,7 @@ const GRID_LAYOUT: Record<NodeViewMode, { className: string; minColumnWidth: num
   large: { className: "grid gap-4 xl:gap-5", minColumnWidth: 360 },
   compact: { className: "grid gap-3 xl:gap-4", minColumnWidth: 340 },
   mini: { className: "grid gap-3 xl:gap-3.5", minColumnWidth: 260 },
+  banner: { className: "grid gap-2 node-grid-banner", minColumnWidth: 0 },
   // 占位以满足 Record 穷尽。
   list: { className: "", minColumnWidth: 0 },
 };
@@ -336,6 +337,18 @@ export function NodeGrid() {
   const sortDirection = sortEnabled ? sort.direction : themeSettings.homeSortDirection;
   const [selectedGroup, setSelectedGroup] = useState(HOME_ALL_GROUP);
   const [selectedRegion, setSelectedRegion] = useState(HOME_ALL_REGION);
+  const [expandedUuid, setExpandedUuid] = useState<string | null>(null);
+
+  useEffect(() => {
+    setExpandedUuid(null);
+  }, [mode]);
+
+  const expandNode = useCallback((uuid: string) => {
+    setExpandedUuid(uuid);
+  }, []);
+  const collapseNode = useCallback(() => {
+    setExpandedUuid(null);
+  }, []);
   useHomepagePingOverview(mode);
 
   // 摘要不含名称，先从完整 meta 解析主题隐藏列表，再统一过滤各类数据。
@@ -585,6 +598,19 @@ export function NodeGrid() {
                 <CompactNodeCard
                   uuid={uuid}
                 />
+              ) : mode === "banner" ? (
+                expandedUuid === uuid ? (
+                  <NodeCard
+                    uuid={uuid}
+                    onCollapse={collapseNode}
+                  />
+                ) : (
+                  <CompactNodeCard
+                    uuid={uuid}
+                    layout="banner"
+                    onExpand={() => expandNode(uuid)}
+                  />
+                )
               ) : (
                 <NodeCard
                   uuid={uuid}
@@ -592,7 +618,7 @@ export function NodeGrid() {
               )}
             </div>
           )),
-    [orderedUuids, mode],
+    [orderedUuids, mode, expandedUuid, expandNode, collapseNode],
   );
   const showGroupTabs =
     themeSettings.isReady && themeSettings.showGroupTabs && groupOptions.length > 0;
@@ -603,10 +629,13 @@ export function NodeGrid() {
   // 分组标签栏与卡片网格共用列定义，让标签栏左缘对齐首卡。
   const isMini = mode === "mini";
   const isList = mode === "list";
+  const isBanner = mode === "banner";
   const { className: gridClassName, minColumnWidth } = GRID_LAYOUT[mode];
   const gridWrapClassName = isMini ? `${gridClassName} node-grid-mini` : gridClassName;
   const gridStyle = isList
     ? undefined
+    : isBanner
+      ? { gridTemplateColumns: "1fr" }
     : isMini
       ? ({ "--mini-card-min-width": `${minColumnWidth}px` } as MiniGridStyle)
       : { gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${minColumnWidth}px), 1fr))` };
@@ -616,7 +645,7 @@ export function NodeGrid() {
     </div>
   );
   // 迷你与列表档的控件栏借用小卡列宽，避免跟随密集内容列而被压窄。
-  const borrowControlsGrid = isMini || isList;
+  const borrowControlsGrid = isMini || isList || isBanner;
   const controlsWrapClassName = borrowControlsGrid
     ? "grid gap-3 home-controls-bar mb-4"
     : `${gridWrapClassName} home-controls-bar mb-4`;
@@ -658,7 +687,7 @@ export function NodeGrid() {
       {showHomeOverview && (
         <HomeOverviewCards
           overview={displayOverview}
-          dense={mode === "mini" || mode === "list"}
+          dense={mode === "mini" || mode === "list" || mode === "banner"}
           showDetailButton={showCostDetailButton}
           showAssetCard={showAssetCard}
           renewalReminderDays={
@@ -716,7 +745,14 @@ export function NodeGrid() {
           onReorder={handleRegionReorder}
         />
       )}
-      {isList ? <NodeListView uuids={orderedUuids} /> : gridElement}
+      {isList ? (
+        <NodeListView
+          uuids={orderedUuids}
+          expandedUuid={expandedUuid}
+          onExpand={expandNode}
+          onCollapse={collapseNode}
+        />
+      ) : gridElement}
     </>
   );
 }

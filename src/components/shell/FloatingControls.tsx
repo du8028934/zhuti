@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { AlertTriangle, Check, ChevronLeft, ChevronRight, Grid3x3, LayoutGrid, List, Monitor, Palette, RefreshCw, Rows3, Settings, SlidersHorizontal, Sun, Moon } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Grid3x3, LayoutGrid, List, Monitor, Palette, RectangleHorizontal, RefreshCw, Rows3, Settings, SlidersHorizontal, Sun, Moon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useViewMode } from "@/hooks/useViewMode";
@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
 import type { PingHistoryRefreshState } from "@/hooks/usePingHistoryRefresh";
 import { getAdminUrl } from "@/services/cfsm/config";
-import type { NodeViewMode } from "@/utils/themeSettings";
+import { getNextAppearance, type NodeViewMode } from "@/utils/themeSettings";
 import { clsx } from "clsx";
 
 const MetricColorPicker = lazy(() =>
@@ -22,6 +22,7 @@ const VIEW_MODE_META: Record<NodeViewMode, { icon: typeof LayoutGrid; label: str
   compact: { icon: Rows3, label: "小视图" },
   mini: { icon: Grid3x3, label: "迷你视图" },
   list: { icon: List, label: "列表视图" },
+  banner: { icon: RectangleHorizontal, label: "折叠视图" },
 };
 
 /**
@@ -91,7 +92,7 @@ export function FloatingControls({
   pingRefresh: PingHistoryRefreshState;
 }) {
   const { appearance, setAppearance } = usePreferences();
-  const { mode, nextMode, toggleMode } = useViewMode();
+  const { device, mode, nextMode, toggleMode } = useViewMode();
   const { data: me } = useAuth();
   const themeSettings = useThemeSettings();
   const { failureStreak } = useNodeStoreStatus();
@@ -109,6 +110,11 @@ export function FloatingControls({
   const ToggleIcon = collapsed ? ChevronLeft : ChevronRight;
   const ViewIcon = VIEW_MODE_META[nextMode].icon;
   // 只要不在最宽松的大卡默认态,就视为"已切换"，按钮保持高亮。
+  const isMobileControls = device === "mobile";
+  const nextAppearance = getNextAppearance(appearance);
+  const currentAppearance = APPEARANCE_OPTIONS.find((option) => option.value === appearance)
+    ?? APPEARANCE_OPTIONS[1];
+  const CurrentAppearanceIcon = currentAppearance.icon;
   const isReducedView = mode !== "large";
   useEffect(() => {
     onExpandedChange?.(false);
@@ -146,23 +152,36 @@ export function FloatingControls({
                   role="group"
                   aria-label="外观选择"
                 >
-                  {APPEARANCE_OPTIONS.map(({ value, icon: Icon, label }) => (
+                  {isMobileControls ? (
                     <button
-                      key={value}
                       type="button"
-                      onClick={() => setAppearance(value)}
-                      aria-label={label}
-                      aria-pressed={appearance === value}
-                      title={label}
+                      onClick={() => setAppearance(nextAppearance)}
+                      aria-label={`外观：${currentAppearance.label}，点击切换到${APPEARANCE_OPTIONS.find((option) => option.value === nextAppearance)?.label ?? "下一档"}`}
+                      title={`外观：${currentAppearance.label} · 点击切换`}
                       tabIndex={hiddenTabIndex}
-                      className={clsx(
-                        "control-button grid h-9 w-9 place-items-center",
-                        appearance === value && "control-toggle is-active",
-                      )}
+                      className="control-button grid h-9 w-9 place-items-center control-toggle is-active"
                     >
-                      <Icon size={16} />
+                      <CurrentAppearanceIcon size={16} />
                     </button>
-                  ))}
+                  ) : (
+                    APPEARANCE_OPTIONS.map(({ value, icon: Icon, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setAppearance(value)}
+                        aria-label={label}
+                        aria-pressed={appearance === value}
+                        title={label}
+                        tabIndex={hiddenTabIndex}
+                        className={clsx(
+                          "control-button grid h-9 w-9 place-items-center",
+                          appearance === value && "control-toggle is-active",
+                        )}
+                      >
+                        <Icon size={16} />
+                      </button>
+                    ))
+                  )}
                 </div>
                 <button
                   type="button"

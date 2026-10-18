@@ -35,7 +35,14 @@ import {
 } from "@/utils/pingLineOverrides";
 
 export type Appearance = "system" | "light" | "dark";
-export type NodeViewMode = "large" | "compact" | "mini" | "list";
+export type NodeViewMode = "large" | "compact" | "mini" | "list" | "banner";
+
+export const APPEARANCE_CYCLE: readonly Appearance[] = ["light", "system", "dark"];
+
+export function getNextAppearance(current: Appearance): Appearance {
+  const index = APPEARANCE_CYCLE.indexOf(current);
+  return APPEARANCE_CYCLE[(index + 1) % APPEARANCE_CYCLE.length] ?? "system";
+}
 
 export interface ResolvedThemeSettings {
   defaultAppearance: Appearance;
@@ -175,7 +182,13 @@ function normalizeAppearance(
 }
 
 export function isNodeViewMode(value: unknown): value is NodeViewMode {
-  return value === "large" || value === "compact" || value === "mini" || value === "list";
+  return (
+    value === "large" ||
+    value === "compact" ||
+    value === "mini" ||
+    value === "list" ||
+    value === "banner"
+  );
 }
 
 function normalizeNodeViewMode(
@@ -187,14 +200,22 @@ function normalizeNodeViewMode(
   return typeof value === "string" && value.length > 0 ? "compact" : fallback;
 }
 
-// 列表档仅桌面可用(见 useViewMode 的 MOBILE_VIEW_MODES)。移动端即便配置里存了 "list"
-// (历史值/外部写入)也归一化回默认档,避免管理页无选中项、首页又强制回落 compact 的不一致。
+// 列表档仅桌面可用；折叠横幅档仅移动端可用（见 useViewMode 的循环表）。
+// 管理页/首页对非法设备档做同一套归一，避免无选中项或强制回落不一致。
 function normalizeMobileNodeViewMode(
   value: unknown,
   fallback: NodeViewMode,
 ): NodeViewMode {
   const mode = normalizeNodeViewMode(value, fallback);
   return mode === "list" ? fallback : mode;
+}
+
+function normalizeDesktopNodeViewMode(
+  value: unknown,
+  fallback: NodeViewMode,
+): NodeViewMode {
+  const mode = normalizeNodeViewMode(value, fallback);
+  return mode === "banner" ? fallback : mode;
 }
 
 function enabledUnlessFalse(value: unknown) {
@@ -231,7 +252,7 @@ export function normalizeThemeSettings(
       : normalizeHomepageMultiPingTaskIds(settings.homepageMultiPingTaskIds);
   return {
     defaultAppearance: normalizeAppearance(settings?.defaultAppearance),
-    desktopNodeViewMode: normalizeNodeViewMode(
+    desktopNodeViewMode: normalizeDesktopNodeViewMode(
       settings?.desktopNodeViewMode,
       DEFAULT_THEME_SETTINGS.desktopNodeViewMode,
     ),

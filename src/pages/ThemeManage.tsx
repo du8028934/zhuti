@@ -33,6 +33,7 @@ import {
   Network,
   Plus,
   Rows3,
+  RectangleHorizontal,
   Save,
   Search,
   Sparkles,
@@ -119,7 +120,9 @@ const NODE_VIEW_MODE_OPTIONS = [
   { value: "compact", label: "小卡片", icon: Rows3 },
   { value: "mini", label: "迷你卡片", icon: Grid3x3 },
   { value: "list", label: "列表", icon: List },
+  { value: "banner", label: "折叠横幅", icon: RectangleHorizontal },
 ] as const;
+const DESKTOP_VIEW_MODE_OPTIONS = NODE_VIEW_MODE_OPTIONS.filter((option) => option.value !== "banner");
 const MOBILE_VIEW_MODE_OPTIONS = NODE_VIEW_MODE_OPTIONS.filter((option) => option.value !== "list");
 
 // 大卡片/小卡片显示单条还是多条线路。value 直接是 enableHomepageMultiPing 的布尔值。
@@ -1626,7 +1629,7 @@ export function ThemeManage() {
                       </div>
                     </div>
                     <div className="instance-segmented is-prominent is-even">
-                      {NODE_VIEW_MODE_OPTIONS.map(({ value, label, icon: Icon }) => (
+                      {DESKTOP_VIEW_MODE_OPTIONS.map(({ value, label, icon: Icon }) => (
                         <button
                           key={value}
                           type="button"

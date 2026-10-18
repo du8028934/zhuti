@@ -19,6 +19,8 @@ import { HealthBucketTooltip } from "./HealthBucketTooltip";
 import { MetricDetailTip, useMetricDetailTip } from "./MetricDetailTip";
 import { resolveTouchBucketIndex, TOUCH_BUCKET_HOLD_MS } from "./touchBucketPick";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
+import { MetricRing } from "./MetricRing";
 import { HOMEPAGE_PING_BUCKET_COUNT } from "@/hooks/usePingOverview";
 import { speedRateColor } from "@/utils/metricTone";
 import { supportsFineHover } from "@/utils/mediaQuery";
@@ -124,14 +126,38 @@ function MiniMetricBar({
   fraction: number;
   paint: string;
 }) {
+  const { style } = useMetricStyle();
   const clamped = Math.max(0, Math.min(1, fraction));
   const fullValue = `${valueText}${unit ?? ""}`;
-  const style: MiniMetricStyle = {
+  const trackStyle: MiniMetricStyle = {
     "--mini-metric-fill": `${clamped * 100}%`,
     "--mini-metric-color": paint,
   };
 
   const tip = useMetricDetailTip();
+
+  if (style === "ring") {
+    return (
+      <div
+        className="metric-item is-ring"
+        data-tip-open={tip.open ? "true" : undefined}
+        {...tip.handlers}
+      >
+        {tip.open && <MetricDetailTip text={detail} />}
+        <MetricRing fraction={clamped} color={paint} size={52} stroke={5} />
+        <div className="mini-metric-head">
+          <span className="mini-metric-label">
+            {icon}
+            {label}
+          </span>
+          <span className="mini-metric-value tabular" aria-label={`${label} ${fullValue}`}>
+            <strong>{valueText}</strong>
+            {unit && <small>{unit}</small>}
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -150,7 +176,11 @@ function MiniMetricBar({
           {unit && <small>{unit}</small>}
         </span>
       </div>
-      <span className="mini-metric-track" style={style} aria-hidden />
+      <span
+        className={clsx("mini-metric-track", style === "bar" && "is-solid")}
+        style={trackStyle}
+        aria-hidden
+      />
     </div>
   );
 }
@@ -162,8 +192,9 @@ function MiniVitals({
   node: MiniNode;
   loadFraction: number;
 }) {
+  const { style } = useMetricStyle();
   return (
-    <div className="mini-node-vitals">
+    <div className="mini-node-vitals" data-metric-style={style}>
       <MiniMetricBar
         icon={<Cpu size={12} strokeWidth={2} />}
         label="CPU"

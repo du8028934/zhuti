@@ -467,8 +467,8 @@ export const EMPTY_CARRIER_PING: CarrierPingSnapshot = Object.freeze(
 
 export interface ThemeSettings {
   defaultAppearance?: "system" | "light" | "dark";
-  desktopNodeViewMode?: "large" | "compact" | "mini" | "list";
-  mobileNodeViewMode?: "large" | "compact" | "mini" | "list";
+  desktopNodeViewMode?: "large" | "compact" | "mini" | "list" | "banner";
+  mobileNodeViewMode?: "large" | "compact" | "mini" | "list" | "banner";
   enableAdminButton?: boolean;
   showPingChart?: boolean;
   homepagePingBindings?: Record<string, string[]>;

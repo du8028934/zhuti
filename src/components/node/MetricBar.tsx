@@ -1,5 +1,7 @@
 import { useCallback, type ReactNode } from "react";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
 import { CanvasStrip, fillRoundedRect, safeCanvasColor } from "./CanvasStrip";
+import { MetricRing } from "./MetricRing";
 
 const METRIC_SEGMENT_COUNT = 18;
 
@@ -24,11 +26,10 @@ export function MetricBar({
   redrawKey,
   paint,
 }: MetricBarProps) {
+  const { style } = useMetricStyle();
   const clamped = Math.max(0, Math.min(1, fraction));
   const activeSegments = clamped * METRIC_SEGMENT_COUNT;
 
-  // 除非填充比例或配色真正变化,否则跨渲染保持稳定,这样 CanvasStrip 的重绘 effect
-  // 不会在父组件每个 metrics tick 都触发。
   const draw = useCallback(
     (ctx: CanvasRenderingContext2D, width: number, height: number) => {
       const inactiveColor = safeCanvasColor("var(--progress-bg)");
@@ -60,6 +61,29 @@ export function MetricBar({
     [activeSegments, paint],
   );
 
+  if (style === "ring") {
+    return (
+      <div className="metric-item is-ring">
+        <MetricRing fraction={clamped} color={paint} size={68} />
+        <div className="metric-ring-meta">
+          <span className="metric-ring-label">
+            {icon}
+            {label}
+          </span>
+          <strong className="tabular">
+            {valueText}
+            {unit && <small>{unit}</small>}
+          </strong>
+        </div>
+        {detailText && (
+          <div className="metric-detail" title={detailText}>
+            {detailText}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="metric-item">
       <div className="flex justify-between items-center gap-3 min-w-0">
@@ -81,14 +105,20 @@ export function MetricBar({
       >
         {detailText ?? "\u00A0"}
       </div>
-      <div className="metric-track">
-        <CanvasStrip
-          className="metric-track-canvas"
-          height={8}
-          redrawKey={redrawKey}
-          draw={draw}
-        />
-      </div>
+      {style === "bar" ? (
+        <div className="metric-track is-solid" aria-hidden>
+          <span style={{ width: `${clamped * 100}%`, background: paint }} />
+        </div>
+      ) : (
+        <div className="metric-track">
+          <CanvasStrip
+            className="metric-track-canvas"
+            height={8}
+            redrawKey={redrawKey}
+            draw={draw}
+          />
+        </div>
+      )}
     </div>
   );
 }

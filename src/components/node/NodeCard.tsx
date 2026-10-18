@@ -15,10 +15,12 @@ import {
   CircleDollarSign,
   Database,
   Network,
+  ChevronUp,
 } from "lucide-react";
 import { useNodeCardModel } from "@/hooks/useNodeCardModel";
 import { usePreferences } from "@/hooks/usePreferences";
 import { useMetricColorsVersion } from "@/hooks/useMetricColors";
+import { useMetricStyle } from "@/hooks/useMetricStyle";
 import { useThemeSettings } from "@/hooks/useThemeSettings";
 import { formatBytes } from "@/utils/format";
 import {
@@ -51,8 +53,10 @@ type DisplayTag = { label: string; color: string };
 
 export const NodeCard = memo(function NodeCard({
   uuid,
+  onCollapse,
 }: {
   uuid: string;
+  onCollapse?: () => void;
 }) {
   const { resolvedAppearance } = usePreferences();
   // 自定义配色改动时 version 自增，拼进 redrawKey 让 canvas 进度条即时重画（含离线静态卡）。
@@ -111,6 +115,7 @@ export const NodeCard = memo(function NodeCard({
           node={node}
           subtitle={subtitle}
           osName={osName}
+          onCollapse={onCollapse}
         />
 
         <div className="server-card-stack">
@@ -191,10 +196,12 @@ function NodeCardHeader({
   node,
   subtitle,
   osName,
+  onCollapse,
 }: {
   node: NodeCardNode;
   subtitle: string;
   osName: string;
+  onCollapse?: () => void;
 }) {
   const detailLabels = nodeDetailLinkLabels(node.name, osName);
   return (
@@ -222,6 +229,17 @@ function NodeCardHeader({
         )}
       </div>
       <div className="server-card-actions">
+        {onCollapse && (
+          <button
+            type="button"
+            className="server-card-collapse"
+            onClick={onCollapse}
+            title="收起"
+            aria-label="收起卡片"
+          >
+            <ChevronUp size={16} />
+          </button>
+        )}
         <Link
           to={`/server/${encodeURIComponent(node.uuid)}`}
           className="server-card-detail-link"
@@ -244,8 +262,9 @@ function NodeMetricSection({
   loadFraction: number;
   redrawKey: string;
 }) {
+  const { style } = useMetricStyle();
   return (
-    <div className="card-metric-section server-metric-grid">
+    <div className="card-metric-section server-metric-grid" data-metric-style={style}>
       <MetricBar
         icon={<Cpu size={13} strokeWidth={2} />}
         label="CPU"

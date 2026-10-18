@@ -558,6 +558,38 @@ body::after {
   color: var(--text-primary);
 }
 
+.metric-style-presets {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.metric-style-preset {
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text-tertiary);
+  padding: 7px 4px;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1;
+  transition:
+    border-color 140ms ease,
+    background 140ms ease,
+    color 140ms ease;
+}
+
+.metric-style-preset:hover {
+  background: var(--hover-bg);
+  color: var(--text-secondary);
+}
+
+.metric-style-preset[data-active="true"] {
+  border-color: color-mix(in srgb, var(--accent-500) 42%, var(--border));
+  background: color-mix(in srgb, var(--accent-500) 9%, var(--surface-elev));
+  color: var(--text-primary);
+}
+
 .dark-depth-preset-swatch {
   width: 12px;
   height: 12px;

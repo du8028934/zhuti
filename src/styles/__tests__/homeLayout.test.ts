@@ -21,6 +21,10 @@ const appShellSource = readFileSync(
   "utf8",
 );
 const routerSource = readFileSync(new URL("../../router.tsx", import.meta.url), "utf8");
+const pickerSource = readFileSync(
+  new URL("../../components/shell/MetricColorPicker.tsx", import.meta.url),
+  "utf8",
+);
 
 describe("home responsive layout contracts", () => {
   it("uses an explicit expanded state through tablet widths without :has()", () => {
@@ -45,6 +49,8 @@ describe("home responsive layout contracts", () => {
 
   it("resets child panels on collapse and keeps home-only routing out of controls", () => {
     expect(controlsSource).toContain("if (nextCollapsed) setColorsOpen(false)");
+    expect(controlsSource).toContain("isMobileControls");
+    expect(controlsSource).toContain("getNextAppearance");
     expect(controlsSource).not.toContain("useLocation");
     expect(controlsSource).not.toContain("useSearchParams");
     expect(controlsSource).not.toContain("usePublicConfig");
@@ -59,7 +65,8 @@ describe("home responsive layout contracts", () => {
   });
 
   it("does not render zero-value overview cards before the node store is hydrated", () => {
-    expect(nodeGridSource).toContain("hydrated: storeHydrated");
+    expect(nodeGridSource).toContain("expandedUuid");
+    expect(nodeGridSource).toContain("onCollapse");
     expect(nodeGridSource).toContain("!themeSettings.isReady || !storeHydrated");
     expect(nodeGridSource.indexOf("!themeSettings.isReady || !storeHydrated")).toBeLessThan(
       nodeGridSource.indexOf("const homeHeader"),
@@ -81,5 +88,8 @@ describe("home responsive layout contracts", () => {
     expect(routerSource).toContain('import { Home } from "@/pages/Home"');
     expect(routerSource).not.toMatch(/const Home\s*=\s*lazy/);
     expect(routerSource).toContain("element: <Home />");
+    expect(pickerSource).toContain("METRIC_STYLE_OPTIONS");
+    expect(pickerSource).toContain("setMetricStyle");
+    expect(pickerSource).toContain("指标样式");
   });
 });
